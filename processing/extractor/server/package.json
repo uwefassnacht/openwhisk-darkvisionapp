@@ -1,14 +1,14 @@
 {
   "name": "extractor-server",
   "version": "1.0.0",
-  "description": "Listens for invocation from OpenWhisk and calls the extractor client",
+  "description": "Listens for invocation from Cloud Functions and calls the extractor client",
   "dependencies": {
     "body-parser": "1.15.2",
     "express": "4.14.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/IBM-Bluemix/openwhisk-darkvisionapp/"
+    "url": "https://github.com/IBM-Cloud/openwhisk-darkvisionapp/"
   },
   "author": "IBM",
   "license": "Apache-2.0"

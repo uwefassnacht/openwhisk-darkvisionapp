@@ -21,20 +21,20 @@ const async = require('async');
 const request = require('request');
 
 const argv = require('yargs')
-  .command('install', 'Install OpenWhisk actions')
-  .command('uninstall', 'Uninstall OpenWhisk actions')
+  .command('install', 'Install Cloud Functions actions')
+  .command('uninstall', 'Uninstall Cloud Functions actions')
   .command('disable', 'Disable video and image processing')
   .command('enable', 'Enable video and image processing')
   .command('update', 'Update action code')
   .command('register_callback', 'Register the Speech to Text action as callback')
   .option('apihost', {
     alias: 'a',
-    describe: 'OpenWhisk API host',
+    describe: 'Cloud Functions API host',
     type: 'string'
   })
   .option('auth', {
     alias: 'u',
-    describe: 'OpenWhisk authorization key',
+    describe: 'Cloud Functions authorization key',
     type: 'string'
   })
   .count('verbose')
@@ -59,19 +59,19 @@ if (!argv.install &&
   process.exit(1);
 }
 
-// load OpenWhisk CLI configuration if it exists
+// load Cloud Functions CLI configuration if it exists
 const wskCliPropsPath = path.join(os.homedir(), '.wskprops');
 if (fs.existsSync(wskCliPropsPath)) {
   require('dotenv').config({ path: wskCliPropsPath });
-  WARN('Initialized OpenWhisk host and key from', wskCliPropsPath);
+  WARN('Initialized Cloud Functions host and key from', wskCliPropsPath);
 }
 
 if (argv.apihost) {
-  WARN('OpenWhisk host is set on command line.');
+  WARN('Cloud Functions host is set on command line.');
 }
 
 if (argv.auth) {
-  WARN('OpenWhisk authorization key is set on command line.');
+  WARN('Cloud Functions authorization key is set on command line.');
 }
 
 // load configuration options
@@ -128,20 +128,9 @@ function registerCallback() {
 function install(ow) {
   WARN('Installing artifacts...');
   waterfall([
-    //   wsk package create vision
     (callback) => {
       call(ow, 'package', 'create', 'vision', callback);
     },
-    //   wsk package update vision\
-    //     -p cloudantUrl https://$CLOUDANT_username:$CLOUDANT_password@$CLOUDANT_host\
-    //     -p watsonApiKey \
-    //     -p cloudantDbName \
-    //     -p osAuthUrl "$OS_AUTH_URL"\
-    //     -p osProjectId "$OS_PROJECT_ID"\
-    //     -p osRegion "$OS_REGION"\
-    //     -p osUsername "$OS_USERNAME"\
-    //     -p osPassword "$OS_PASSWORD"\
-    //     -p osDomainId "$OS_DOMAIN_ID"
     (callback) => {
       const keyAndValues = {
         cloudantUrl: `https://${process.env.CLOUDANT_username}:${process.env.CLOUDANT_password}@${process.env.CLOUDANT_host}`,
@@ -161,6 +150,10 @@ function install(ow) {
         osUsername: process.env.OS_USERNAME || '',
         osPassword: process.env.OS_PASSWORD || '',
         osDomainId: process.env.OS_DOMAIN_ID || '',
+        cosEndpoint: process.env.COS_ENDPOINT || '',
+        cosApiKey: process.env.COS_API_KEY || '',
+        cosBucket: process.env.COS_BUCKET || '',
+        cosInstanceId: process.env.COS_INSTANCE_ID || '',
       };
       call(ow, 'package', 'update', {
         packageName: 'vision',
@@ -261,12 +254,12 @@ function makeSpeechToTextTask(ow, isCreate) {
 }
 
 function makeActionTask(ow, actionName, isCreate, options = {}) {
-  //   wsk action create vision/speechtotext --kind nodejs:6 speechtotext/speechtotext.zip
+  //   wsk action create vision/speechtotext --kind nodejs:8 speechtotext/speechtotext.zip
   return (callback) => {
     const files = {
       'package.json': `processing/${actionName}/package.json`,
       'lib/cloudantstorage.js': 'web/lib/cloudantstorage.js',
-      'lib/objectstorage.js': 'web/lib/objectstorage.js',
+      'lib/cloudobjectstorage.js': 'web/lib/cloudobjectstorage.js',
       'lib/cloudant-designs.json': 'web/lib/cloudant-designs.json'
     };
     files[`${actionName}.js`] = `processing/${actionName}/${actionName}.js`;
@@ -276,7 +269,7 @@ function makeActionTask(ow, actionName, isCreate, options = {}) {
       actionName: `vision/${actionName}`,
       action: {
         exec: {
-          kind: 'nodejs:6',
+          kind: 'nodejs:8',
           code: actionCode,
           binary: true
         },
@@ -290,7 +283,7 @@ function makeActionTask(ow, actionName, isCreate, options = {}) {
 }
 
 function makeChangeListenerTask(ow, isCreate) {
-  //   wsk action create vision-cloudant-changelistener --kind nodejs:6 changelistener/changelistener.zip\
+  //   wsk action create vision-cloudant-changelistener --kind nodejs:8 changelistener/changelistener.zip\
   //     -p cloudantUrl https://$CLOUDANT_username:$CLOUDANT_password@$CLOUDANT_host\
   //     -p cloudantDbName $CLOUDANT_db
   return (callback) => {
@@ -298,14 +291,14 @@ function makeChangeListenerTask(ow, isCreate) {
       'package.json': 'processing/changelistener/package.json',
       'changelistener.js': 'processing/changelistener/changelistener.js',
       'lib/cloudantstorage.js': 'web/lib/cloudantstorage.js',
-      'lib/objectstorage.js': 'web/lib/objectstorage.js',
+      'lib/cloudobjectstorage.js': 'web/lib/cloudobjectstorage.js',
       'lib/cloudant-designs.json': 'web/lib/cloudant-designs.json'
     });
     call(ow, 'action', isCreate ? 'create' : 'update', {
       actionName: 'vision-cloudant-changelistener',
       action: {
         exec: {
-          kind: 'nodejs:6',
+          kind: 'nodejs:8',
           code: actionCode,
           binary: true
         },
@@ -377,7 +370,7 @@ function update(ow) {
   ]);
 }
 
-// call the OpenWhisk client API dynamically
+// call the Cloud Functions client API dynamically
 function call(ow, resource, verb, callOptions, callback) {
   let params = callOptions;
   if (typeof callOptions === 'string') {

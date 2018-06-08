@@ -1,6 +1,8 @@
-# OpenWhisk Dark Vision - Discover dark data in videos with IBM Watson and IBM Bluemix OpenWhisk
+# Cloud Functions Dark Vision - Discover dark data in videos with IBM Watson and IBM Cloud Functions
 
-[![Build Status](https://travis-ci.org/IBM-Bluemix/openwhisk-darkvisionapp.svg?branch=master)](https://travis-ci.org/IBM-Bluemix/openwhisk-darkvisionapp) ![Bluemix Deployments](https://deployment-tracker.mybluemix.net/stats/ad94d1daf817a5fd818f977c0a7cf632/badge.svg)
+[![Build Status](https://travis-ci.org/IBM-Cloud/openwhisk-darkvisionapp.svg?branch=master)](https://travis-ci.org/IBM-Cloud/openwhisk-darkvisionapp)
+
+> Dark Vision is a technology demonstration leveraging Cloud Functions and Watson services. If you are looking for an official and supported IBM offering head over to the [Watson Video Enrichment product](https://www.ibm.com/watson/media/). This product uses Watson APIs and additional technology to enrich video assets.
 
 Think about all the videos individuals and companies (Media and Entertainment) accumulate every year. How can you keep track of what's inside of them so you can quickly search and find what you're looking for? *Show me all the videos that have Arc De Triomphe in it.* or *Show me the all the videos that talk about peaches*
 
@@ -21,22 +23,22 @@ Dark Vision is an application that processes videos to discover what's inside of
 
 ## Overview and Architecture
 
- Built using IBM Bluemix, the application uses:
-  * [Visual Recognition](https://console.ng.bluemix.net/catalog/services/watson_vision_combined)
-  * [Speech to Text](https://console.ng.bluemix.net/catalog/services/speech_to_text)
-  * [Natural Language Understanding](https://console.ng.bluemix.net/catalog/services/natural-language-understanding)
-  * [OpenWhisk](console.ng.bluemix.net/openwhisk/)
-  * [Cloudant](https://console.ng.bluemix.net/catalog/services/cloudantNoSQLDB)
-  * [Object Storage](https://console.ng.bluemix.net/catalog/services/Object-Storage) (optional component)
+ Built using IBM Cloud, the application uses:
+  * [Visual Recognition](https://console.bluemix.net/catalog/services/watson_vision_combined)
+  * [Speech to Text](https://console.bluemix.net/catalog/services/speech_to_text)
+  * [Natural Language Understanding](https://console.bluemix.net/catalog/services/natural-language-understanding)
+  * [Cloud Functions](console.bluemix.net/openwhisk/)
+  * [Cloudant](https://console.bluemix.net/catalog/services/cloudantNoSQLDB)
+  * [Object Storage](https://console.bluemix.net/catalog/services/Object-Storage) (optional component)
 
 ### Extracting frames and audio from a video
 
-The user uploads a video or image using the Dark Vision web application, which stores it in a Cloudant Database (1). Once the video is uploaded, OpenWhisk detects the new video (2) by listening to Cloudant changes (trigger).
-OpenWhisk then triggers the video and audio extractor action (3). During its execution, the extractor produces frames (images) (4), captures the audio track (5) and stores them in Cloudant (6, 7). The frames are then processed using Watson Visual Recognition, the audio with Watson Speech to Text and Natural Language Understanding. The results are stored in the same Cloudant DB. They can be viewed using Dark Vision web application or the iOS application.
+The user uploads a video or image using the Dark Vision web application, which stores it in a Cloudant Database (1). Once the video is uploaded, Cloud Functions detects the new video (2) by listening to Cloudant changes (trigger).
+Cloud Functions then triggers the video and audio extractor action (3). During its execution, the extractor produces frames (images) (4), captures the audio track (5) and stores them in Cloudant (6, 7). The frames are then processed using Watson Visual Recognition, the audio with Watson Speech to Text and Natural Language Understanding. The results are stored in the same Cloudant DB. They can be viewed using Dark Vision web application or the iOS application.
 
 Object Storage can complement Cloudant. When doing so, video and image medadata are stored in Cloudant and the media files are stored in Object Storage.
 
-![Architecture](https://g.gravizo.com/source/extract_video?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Bluemix%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
+![Architecture](https://g.gravizo.com/source/extract_video?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Cloud%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
 <details>
 <summary></summary>
 extract_video
@@ -59,7 +61,7 @@ extract_video
     frames [label="Image Frames"]
     audio [label="Audio Track"]
     storage [shape=circle style=filled color="%234E96DB" fontcolor=white label="Data Store"]
-    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="OpenWhisk"]
+    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="Cloud Functions"]
   }
 extract_video
 )
@@ -68,9 +70,9 @@ extract_video
 ### Processing frames and standalone images
 
 Whenever a frame is created and uploaded (1), Cloudant emits a change event (2) and
-OpenWhisk triggers the analysis (3). The analysis (4) is persisted with the image (5).
+Cloud Functions triggers the analysis (3). The analysis (4) is persisted with the image (5).
 
-![Architecture](https://g.gravizo.com/source/image_analysis?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Bluemix%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
+![Architecture](https://g.gravizo.com/source/image_analysis?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Cloud%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
 <details>
 <summary></summary>
 image_analysis
@@ -92,7 +94,7 @@ image_analysis
     frame [label="Image Frame"]
     analysis [label="analysis"]
     storage [shape=circle style=filled color="%234E96DB" fontcolor=white label="Data Store"]
-    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="OpenWhisk"]
+    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="Cloud Functions"]
     watson [shape=circle style=filled color="%234E96DB" fontcolor=white label="Watson\nVisual\nRecognition"]
   }
 image_analysis
@@ -102,13 +104,13 @@ image_analysis
 ### Processing audio
 
 Whenever the audio track is extracted (1), Cloudant emits a change event (2) and
-OpenWhisk triggers the audio analysis (3).
+Cloud Functions triggers the audio analysis (3).
 
 #### Extract the audio transcript
 
-Extracting the transcript from an audio track using the Speech to Text service may take more than 5 minutes depending on the video. Because OpenWhisk actions have a 5 minutes limit, waiting in the action for the audio processing to complete is not possible for longer videos. Fortunately the Speech to Text service has a very nice [asynchronous API](https://www.ibm.com/watson/developercloud/speech-to-text/api/v1/?curl#async_methods). Instead of waiting for Speech to Text to process the audio, Dark Vision sends the audio file to Speech to Text (4) and Speech to Text will notify Dark Vision with the transcript when it is done processing the audio (5). The result is attached to the audio document (6).
+Extracting the transcript from an audio track using the Speech to Text service may take more than 5 minutes depending on the video. Because Cloud Functions actions have a 5 minutes limit, waiting in the action for the audio processing to complete is not possible for longer videos. Fortunately the Speech to Text service has a very nice [asynchronous API](https://www.ibm.com/watson/developercloud/speech-to-text/api/v1/?curl#async_methods). Instead of waiting for Speech to Text to process the audio, Dark Vision sends the audio file to Speech to Text (4) and Speech to Text will notify Dark Vision with the transcript when it is done processing the audio (5). The result is attached to the audio document (6).
 
-![Architecture](https://g.gravizo.com/source/extract_audio?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Bluemix%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
+![Architecture](https://g.gravizo.com/source/extract_audio?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Cloud%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
 <details>
 <summary></summary>
 extract_audio
@@ -123,7 +125,7 @@ extract_audio
     audio [label="Audio Track"]
     {rank=same; audio -> storage -> openwhisk -> speechtotext -> watson [style=invis] }
     storage [shape=circle style=filled color="%234E96DB" fontcolor=white label="Data Store"]
-    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="OpenWhisk"]
+    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="Cloud Functions"]
     speechtotext [label="speechtotext"]
     watson [shape=circle style=filled color="%234E96DB" fontcolor=white label="Watson\nSpeech to Text"]
   }
@@ -135,7 +137,7 @@ extract_audio
 
 Once the transcript is stored (1), the text analysis (3) is triggered (2) to detect concepts, entities and emotion (4). The result is attached to the audio (5).
 
-![Architecture](https://g.gravizo.com/source/audio_analysis?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Bluemix%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
+![Architecture](https://g.gravizo.com/source/audio_analysis?https%3A%2F%2Fraw.githubusercontent.com%2FIBM-Cloud%2Fopenwhisk-darkvisionapp%2Fmaster%2FREADME.md)
 <details>
 <summary></summary>
 audio_analysis
@@ -152,7 +154,7 @@ audio_analysis
     transcript [label="Transcript"]
     textanalysis [label="textanalysis"]
     storage [shape=circle style=filled color="%234E96DB" fontcolor=white label="Data Store"]
-    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="OpenWhisk"]
+    openwhisk [shape=circle style=filled color="%2324B643" fontcolor=white label="Cloud Functions"]
     nlu [shape=circle style=filled color="%234E96DB" fontcolor=white label="Natural\nLanguage\nUnderstanding"]
   }
 )
@@ -161,20 +163,22 @@ audio_analysis
 
 ## Prerequisites
 
-* IBM Bluemix account. [Sign up][bluemix_signup_url] for Bluemix, or use an existing account.
+* IBM Cloud account. [Sign up][bluemix_signup_url] for Bluemix, or use an existing account.
 * Docker Hub account. [Sign up](https://hub.docker.com/) for Docker Hub, or use an existing account.
 * Node.js >= 6.9.1
 * XCode 8.0, iOS 10, Swift 3 (For iOS application)
 
-## Deploying Dark Vision automatically in Bluemix
+## Deploying Dark Vision automatically in IBM Cloud
 
 Dark Vision comes with a default toolchain you can use to deploy the solution with few clicks. If you want to deploy it manually, you can skip this section.
 
 1. **Ensure your organization has enough quota for one web application using 256MB of memory and 4 services.**
 
-1. Click ***Deploy to Bluemix*** to start the Bluemix DevOps wizard:
+1. Click ***Deploy to IBM Cloud*** to start the IBM Cloud DevOps wizard:
 
-  [![Deploy to Bluemix](https://deployment-tracker.mybluemix.net/stats/ad94d1daf817a5fd818f977c0a7cf632/button.svg)](https://console.ng.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/IBM-Bluemix/openwhisk-darkvisionapp)
+  [![Deploy to IBM Cloud](https://console.bluemix.net/devops/graphics/create_toolchain_button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https%3A%2F%2Fgithub.com/IBM-Cloud/openwhisk-darkvisionapp)
+
+  > :warning: Dark Vision can currently only be deployed in the US South region.
 
 1. Select the **GitHub** box.
 
@@ -186,9 +190,7 @@ Dark Vision comes with a default toolchain you can use to deploy the solution wi
 
 1. Select the region, organization and space where you want to deploy the web application.
 
-  > :warning: Make sure the organization and the space have no *space* in their names. There is [an open issue around this](https://github.com/IBM-Bluemix/openwhisk-darkvisionapp/issues/54).
-
-  > :warning: Dark Vision is made of two main components: the web application to upload media and view results and the OpenWhisk actions to process the media. OpenWhisk in Bluemix is currently only available in the US South region. If you decide to deploy the web application in another region than US South, make sure to create a space with the same name in the US South region too. The OpenWhisk actions will be deployed to this space in the US South region.
+  > :warning: Make sure the organization and the space have no *space* in their names. There is [an open issue around this](https://github.com/IBM-Cloud/openwhisk-darkvisionapp/issues/54).
 
 1. Set the name of the Dark Vision web application. Pick a unique name to avoid conflicts.
 
@@ -204,7 +206,7 @@ Dark Vision comes with a default toolchain you can use to deploy the solution wi
 
 1. Access the Dark Vision app when it's ready and start uploading videos and images!
 
-## Deploying Dark Vision manually in Bluemix
+## Deploying Dark Vision manually in IBM Cloud
 
 The automatic approach should be the best option for most users as it does everything for you automatically. But if you want to go through all the steps manually or if you want to run the web application locally we've got your covered. Follow [these instructions](./DEPLOY_MANUALLY.md).
 
@@ -242,25 +244,25 @@ The web app exposes an API to list all videos and retrieve the results.
   and of tags returned by Watson.
   The tags with the highest confidence score are shown.
   Tap a tag or a face to change the main image to the
-  frame where this tag or face was detected.  
+  frame where this tag or face was detected.
 
 ## Code Structure
 
-### OpenWhisk - Deployment script
+### Cloud Functions - Deployment script
 
 | File | Description |
 | ---- | ----------- |
-|[**deploy.js**](deploy.js)|Helper script to install, uninstall, update the OpenWhisk trigger, actions, rules used by Dark Vision.|
+|[**deploy.js**](deploy.js)|Helper script to install, uninstall, update the Cloud Functions trigger, actions, rules used by Dark Vision.|
 
-### OpenWhisk - Change listener
+### Cloud Functions - Change listener
 
 | File | Description |
 | ---- | ----------- |
 |[**changelistener.js**](processing/changelistener/changelistener.js)|Processes Cloudant change events and calls the right actions. It controls the processing flow for videos and frames.|
 
-### OpenWhisk - Frame extraction
+### Cloud Functions - Frame extraction
 
-The **frame extractor** runs as a Docker action created with the [OpenWhisk Docker SDK](https://console.ng.bluemix.net/docs/openwhisk/openwhisk_reference.html#openwhisk_ref_docker):
+The **frame extractor** runs as a Docker action created with the [Cloud Functions Docker SDK](https://console.bluemix.net/docs/openwhisk/openwhisk_reference.html#openwhisk_ref_docker):
   * It uses *ffmpeg* to extract frames and audio from the video.
   * It is written as a nodejs app to benefit from several nodejs helper packages (Cloudant, ffmpeg, imagemagick)
 
@@ -268,9 +270,9 @@ The **frame extractor** runs as a Docker action created with the [OpenWhisk Dock
 | ---- | ----------- |
 |[**Dockerfile**](processing/extractor/Dockerfile)|Docker file to build the extractor image. It pulls ffmpeg into the image together with node. It also runs npm install for both the server and client.|
 |[**extract.js**](processing/extractor/client/extract.js)|The core of the frame extractor. It downloads the video stored in Cloudant, uses ffmpeg to extract frames and video metadata, produces a thumbnail for the video. By default it produces around 15 images for a video. This can be changed by modifying the implementation of **getFps**. First 15 min of audio is also exported.|
-|[**app.js**](processing/extractor/server/app.js)|Adapted from the OpenWhisk Docker SDK to call the extract.js node script.|
+|[**app.js**](processing/extractor/server/app.js)|Adapted from the Cloud Functions Docker SDK to call the extract.js node script.|
 
-### OpenWhisk - Frame analysis
+### Cloud Functions - Frame analysis
 
 [**analysis.js**](processing/analysis/analysis.js) holds the JavaScript code to perform the image analysis:
 
@@ -283,9 +285,9 @@ The data has been attached by the *frame extractor* as an attachment named "imag
 
 The action runs asynchronously.
 
-The code is very similar to the one used in the [Vision app](https://github.com/IBM-Bluemix/openwhisk-visionapp).
+The code is very similar to the one used in the [Vision app](https://github.com/IBM-Cloud/openwhisk-visionapp).
 
-### OpenWhisk - Audio analysis
+### Cloud Functions - Audio analysis
 
 | File | Description |
 | ---- | ----------- |
@@ -304,14 +306,14 @@ It shows the video and image catalog and for each video the extracted frames.
 |[**Home page**](web/public/routes/home)|Controller and view for the home page|
 |[**Video page**](web/public/routes/video)|Controller and view for the video detail page|
 
-### Shared code between OpenWhisk actions and web app
+### Shared code between Cloud Functions actions and web app
 
-These files are used by the web application and the OpenWhisk actions. They are automatically injected in the OpenWhisk actions by the [**deploy.js**](deploy.js) script and during the [**build**](processing/extractor/buildAndPush.sh) of the Docker image. These scripts have dependencies on *Cloudant, async, pkgcloud* which are provided by default in OpenWhisk Node.js actions.
+These files are used by the web application and the Cloud Functions actions. They are automatically injected in the Cloud Functions actions by the [**deploy.js**](deploy.js) script and during the [**build**](processing/extractor/buildAndPush.sh) of the Docker image. These scripts have dependencies on *Cloudant, async, pkgcloud* which are provided by default in Cloud Functions Node.js actions.
 
 | File | Description |
 | ---- | ----------- |
 |[**cloudantstorage.js**](web/lib/cloudantstorage.js)|Implements API on top of Cloudant to create/read/update/delete video/image metadata and to upload files|
-|[**objectstorage.js**](web/lib/objectstorage.js)|Implements the file upload operations on top of Object Storage. Used by [**cloudantstorage.js**](web/lib/cloudantstorage.js) when Object Storage is configured.|
+|[**cloudobjectstorage.js**](web/lib/cloudobjectstorage.js)|Implements the file upload operations on top of Cloud Object Storage. Used by [**cloudantstorage.js**](web/lib/cloudantstorage.js) when Cloud Object Storage is configured.|
 |[**cloudant-designs.json**](web/lib/cloudant-designs.json)|Design documents used by the API to expose videos and images. They are automatically loaded into the database when the web app starts for the first time.|
 
 ### iOS
@@ -333,11 +335,11 @@ Please create a pull request with your desired changes.
 ### Dark Vision correctly processes video frames but does not process the audio track
 
 This has been reported several times when using the toolchain.
-It is tracked as [issue 51](https://github.com/IBM-Bluemix/openwhisk-darkvisionapp/issues/51). Make sure to look at the toolchain DEPLOY log to confirm the problem. Locate the line *Registering Speech to Text callback...* to identify the error.
+It is tracked as [issue 51](https://github.com/IBM-Cloud/openwhisk-darkvisionapp/issues/51). Make sure to look at the toolchain DEPLOY log to confirm the problem. Locate the line *Registering Speech to Text callback...* to identify the error.
 
-### OpenWhisk
+### Cloud Functions
 
-Polling activations is good start to debug the OpenWhisk action execution. Run
+Polling activations is good start to debug the Cloud Functions action execution. Run
 ```
 wsk activation poll
 ```
@@ -351,23 +353,8 @@ cf logs <appname>
 ```
 to look at the live logs for the web application
 
-[bluemix_signup_url]: https://console.ng.bluemix.net/?cm_mmc=GitHubReadMe
+[bluemix_signup_url]: https://console.bluemix.net/?cm_mmc=GitHubReadMe
 
 ## License
 
 See [License.txt](License.txt) for license information.
-
-## Privacy Notice
-
-The web application includes code to track deployments to [IBM Bluemix](https://www.bluemix.net/) and other Cloud Foundry platforms. The following information is sent to a [Deployment Tracker](https://github.com/cloudant-labs/deployment-tracker) service on each deployment:
-
-* Application Name (`application_name`)
-* Space ID (`space_id`)
-* Application Version (`application_version`)
-* Application URIs (`application_uris`)
-
-This data is collected from the `VCAP_APPLICATION` environment variable in IBM Bluemix and other Cloud Foundry platforms. This data is used by IBM to track metrics around deployments of sample applications to IBM Bluemix to measure the usefulness of our examples, so that we can continuously improve the content we offer to you. Only deployments of sample applications that include code to ping the Deployment Tracker service will be tracked.
-
-### Disabling Deployment Tracking
-
-Deployment tracking can be disabled by removing require("cf-deployment-tracker-client").track(); from the beginning of the web/app.js file.
